@@ -25,7 +25,7 @@ WebSockets is now widely supported on browsers, but there has been no change to 
 
 * Conflicting numerics
 
-There are conflicts on named numerics, JSON-IRC may attempt to solve these issues in the future my using named commands.
+There are conflicts on named numerics, JSON-IRC may attempt to solve these issues in the future by using named commands.
 
 * Irrelevant information
 
@@ -42,7 +42,6 @@ The following use various different types of encoding/escaping:
   * IRCv3 tags (values only) / WEBIRC options (IRCv3 tags escaping)
   * IRCv3 AUTH (base64 encoding)
 
-
 ## Considerations
 
 The names of the following have been shortened for use in JSON-IRC:
@@ -56,8 +55,14 @@ The names in JSON-IRC were chosen to be kept succinct while maintaining (human) 
 
 ### Protocol
 
-JSON-IRC commands should be sent over WebSockets using a newline as the delimiter as per the [ND-JSON](http://ndjson.org/) format.
+JSON-IRC commands should uses a single newline as a delimiter as per the [ND-JSON](http://ndjson.org/) format.
 The protocol should be compatible with IRCv3, including tags, prefix, command and parameters.
+
+If the decoded JSON object is an array, it should be assumed that the array contains multiple JSON-IRC messages.
+If the decoded JSON object is an object, it should be assumed that it is a JSON-IRC message.
+A message is required to contain a command (cmd) object at a minimum, or the message should be ignored.
+
+There is no limit to the length of a JSON object, however each message should be limited to a particular length.
 
 #### Tags (tags)
 
@@ -80,8 +85,27 @@ Raw numerics should be sent as an integer over JSON-IRC, and the first (target) 
 
 #### Parameters (args)
 
-As JSON is not a protocol delimited by spaces, it seems appropriate to allow spaces to be used in JSON-IRC. To support backwards compatibility, conversion must be attempted on many clients to determine suitability. It is proposed that where required, a percent (%) symbol at the start of a parameter may be used to indicate that the parameter needs to be un-escaped to be display correctly. This is compatible with IRC based channel names, and may be compatible with IRC nicknames & usernames.
-A server may choose to decline names starting with a %, and instead opt for a tradition IRC nickname.
+As JSON is not a protocol delimited by spaces, it seems appropriate to allow spaces to be used in JSON-IRC. To support backwards compatibility, conversion must be attempted on many clients to determine suitability.
+
+Note: hen converting paramters to an IRC compatible message (for backwards compatibility), the following table should be used:
+```
+\b            " "
+\0            NUL
+\\            "\"          
+\r            CR          
+\n            LF
+\t            TAB
+```
+A "\" shall not trigger the requirement for encoding on it's own. Likewise, a " " in a trailing (final) parameter should not trigger the requirement for encoding. This is because the standard IRC protocols allows these to be used.
+
+An encoded parameter should be prefixed with a %, with the exception of nicknames. A nickname should only allow a " " or "\", and should always be escaped using the above table. (IRC Compatible)
+
+A channel name such as `#Lobby` would stay as `#Lobby` (IRC Compatible)
+A channel name with a space such as `#The Lobby` would become `%#The\bLobby` (IRCX Compatible)
+
+```javascript
+TODO: Consideration needs to be given to where binary messages need to not be modified from LATIN1 due to JSON's UTF-8 encoding. 
+```
 
 ### Issues
 

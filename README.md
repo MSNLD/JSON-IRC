@@ -64,7 +64,7 @@ A message is required to contain a command (cmd) object at a minimum, or the mes
 
 There is no limit to the length of a JSON object, however each message should be limited to a particular length.
 
-#### Tags (tags)
+#### Tags (tags) `<string: string | null>[]`
 
 Tags in IRC are formatted as: `tag1;tag2=hello\sworld`
 As JSON already handles escaping in a consistent manner, the following JSON-IRC tags would be considered equivalent:
@@ -78,12 +78,12 @@ As JSON already handles escaping in a consistent manner, the following JSON-IRC 
 The server SHOULD omit a JSON-IRC prefix where it refers only to the current server the client is connected to. (new)
 A client SHOULD omit a JSON-IRC prefix, and a server MUST ignore a prefix from a client (as per IRC)
 
-#### Command (cmd)
+#### Command (cmd) `string | number`
 
 Named commands require no changes at this time.
 Raw numerics should be sent as an integer over JSON-IRC, and the first (target) parameter MUST NOT be sent to clients with the exception of the raw numeric 1 ("001" in IRC) as most clients use the target in 001 to determine the initial nickname on registration.
 
-#### Parameters (args)
+#### Parameters (args) `string[]`
 
 As JSON is not a protocol delimited by spaces, it seems appropriate to allow spaces to be used in JSON-IRC. To support backwards compatibility, conversion must be attempted on many clients to determine suitability.
 

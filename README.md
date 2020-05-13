@@ -1,5 +1,91 @@
 # JSON-IRC
-JSON-IRC describes how the IRC(X/3/4/5/6/7/8/v3) protocols can be delivered over JSON
+JSON-IRC describes how the IRC(X/3/4/5/6/7/8/v3) protocols can be delivered over JSON.
+
+This work is a draft, and SHOULD NOT be used on any production issues.
+
+## Rationale
+
+* Transport
+
+IRC is traditionally transported over raw TCP sockets. Since web applications have become common, there has been an introduction of various proxies being used, such as:
+  * WebSocket
+  * SocketIO
+  * Primus
+  * EngineIO
+  * etc.
+
+The techniques used to gather data vary wildly, some of these are:
+  * iframes / refreshing
+  * long-polling
+  * native object such as XMLHttpRequest
+  * flash, java or other non-native objects
+  * Websockets
+
+WebSockets is now widely supported on browsers, but there has been no change to the existing protocol for handling IRC connections.
+
+* Conflicting numerics
+
+There are conflicts on named numerics, JSON-IRC may attempt to solve these issues in the future my using named commands.
+
+* Irrelevant information
+
+  * Prefixes: While the prefix is ignored from client to server, currently the server needlessly sends it's prefix at every opportunity.
+  * Targets: Where raw numerics are sent from a server to client, the target of the numeric is specified and should always be the nickname of the client.
+  
+* Various escaping methods
+
+The following use various different types of encoding/escaping:
+
+  * IRC Protocol (Latin1)
+  * IRCv3 tags (UTF-8)
+  * IRCX Auth (IRCX escaping)
+  * IRCv3 tags (values only) / WEBIRC options (IRCv3 tags escaping)
+  * IRCv3 AUTH (base64 encoding)
+
+
+## Considerations
+
+The names of the following have been shortened for use in JSON-IRC:
+
+* IRCv3 `Tags` is `tags`
+* RFC1459 `prefix` is `src`
+* RFC1459 `command` is `cmd`
+* RFC1459 `parameters` is `args`
+
+The names in JSON-IRC were chosen to be kept succinct while maintaining (human) readability.
+
+### Protocol
+
+JSON-IRC commands should be sent over WebSockets using a newline as the delimiter as per the [ND-JSON](http://ndjson.org/) format.
+The protocol should be compatible with IRCv3, including tags, prefix, command and parameters.
+
+#### Tags (tags)
+
+Tags in IRC are formatted as: `tag1;tag2=hello\sworld`
+As JSON already handles escaping in a consistent manner, the following JSON-IRC tags would be considered equivalent:
+
+```json
+{"tag1":null,"tag2":"hello world"}
+```
+
+#### Prefix (src)
+
+The server SHOULD omit a JSON-IRC prefix where it refers only to the current server the client is connected to. (new)
+A client SHOULD omit a JSON-IRC prefix, and a server MUST ignore a prefix from a client (as per IRC)
+
+#### Command (cmd)
+
+Named commands require no changes at this time.
+Raw numerics should be sent as an integer over JSON-IRC, and the first (target) parameter MUST NOT be sent to clients with the exception of the raw numeric 1 ("001" in IRC) as most clients use the target in 001 to determine the initial nickname on registration.
+
+#### Parameters (args)
+
+As JSON is not a protocol delimited by spaces, it seems appropriate to allow spaces to be used in JSON-IRC. To support backwards compatibility, conversion must be attempted on many clients to determine suitability. It is proposed that where required, a percent (%) symbol at the start of a parameter may be used to indicate that the parameter needs to be un-escaped to be display correctly. This is compatible with IRC based channel names, and may be compatible with IRC nicknames & usernames.
+A server may choose to decline names starting with a %, and instead opt for a tradition IRC nickname.
+
+### Issues
+
+The MSN based raws 821 and 822 are incompatible with JSON-IRC. The raw numerics may continue to be used
 
 ## Delivery methods
 
@@ -46,9 +132,9 @@ A simple example showing the difference between the IRC protocols and the JSON-I
 :irc.efnet.nl 376 JD :End of /MOTD command.
 ```
 
-#### Example (JSON-IRC, 1539 bytes)
+#### Example (JSON-IRC, 1561 bytes)
 ```json
-[{"cmd":1,"prm":["Welcome to the EFNet Internet Relay Chat Network JD"]},{"cmd":2,"prm":["Your host is irc.efnet.nl[185.100.59.59/6667], running version ircd-ratbox-3.0.10"]},{"cmd":3,"prm":["This server was created Sun Oct 2 2016 at 04:55:27 CEST"]},{"cmd":4,"prm":["irc.efnet.nl","ircd-ratbox-3.0.10","oiwszcrkfydnxbauglZCD","biklmnopstveIrS","bkloveI"]},{"cmd":5,"prm":["CHANTYPES=&#","EXCEPTS","INVEX","CHANMODES=eIb,k,l,imnpstS","CHANLIMIT=&#:80","PREFIX=(ov)@+","MAXLIST=beI:100 MODES=4","NETWORK=EFNet","KNOCK","STATUSMSG=@+","CALLERID=g","are supported by this server"]},{"cmd":5,"prm":["SAFELIST","ELIST=U","CASEMAPPING=rfc1459","CHARSET=ascii","NICKLEN=9","CHANNELLEN=50","TOPICLEN=160","ETRACE","CPRIVMSG","CNOTICE","DEAF=D","MONITOR=60","are supported by this server"]},{"cmd":5,"prm":["FNC","ACCEPT=20","MAP","TARGMAX=NAMES:1,LIST:1,KICK:1,WHOIS:1,PRIVMSG:10,NOTICE:10,ACCEPT:,MONITOR:","are supported by this server"]},{"cmd":251,"prm":["There are 5551 users and 10260 invisible on 22 servers"]},{"cmd":252,"prm":[112,"IRC Operators online"]},{"cmd":254,"prm":[8898,"channels formed"]},{"cmd":255,"prm":["I have 861 clients and 1 servers"]},{"cmd":265,"prm":[861,1981,"Current local users 861, max 1981"]},{"cmd":266,"prm":[15811,19586,"Current global users 15811, max 19586"]},{"cmd":250,"prm":["Highest connection count: 1982 (1981 clients) (521309 connections received)"]},{"cmd":375,"prm":["- irc.efnet.nl Message of the Day -"]},{"cmd":372,"prm":["- <Removed for example>"]},{"cmd":376,"prm":["End of /MOTD command."]}]
+[{"cmd":1,"args":["JD","Welcome to the EFNet Internet Relay Chat Network JD"]},{"cmd":2,"args":["Your host is irc.efnet.nl[185.100.59.59/6667], running version ircd-ratbox-3.0.10"]},{"cmd":3,"args":["This server was created Sun Oct 2 2016 at 04:55:27 CEST"]},{"cmd":4,"args":["irc.efnet.nl","ircd-ratbox-3.0.10","oiwszcrkfydnxbauglZCD","biklmnopstveIrS","bkloveI"]},{"cmd":5,"args":["CHANTYPES=&#","EXCEPTS","INVEX","CHANMODES=eIb,k,l,imnpstS","CHANLIMIT=&#:80","PREFIX=(ov)@+","MAXLIST=beI:100 MODES=4","NETWORK=EFNet","KNOCK","STATUSMSG=@+","CALLERID=g","are supported by this server"]},{"cmd":5,"args":["SAFELIST","ELIST=U","CASEMAPPING=rfc1459","CHARSET=ascii","NICKLEN=9","CHANNELLEN=50","TOPICLEN=160","ETRACE","CPRIVMSG","CNOTICE","DEAF=D","MONITOR=60","are supported by this server"]},{"cmd":5,"args":["FNC","ACCEPT=20","MAP","TARGMAX=NAMES:1,LIST:1,KICK:1,WHOIS:1,PRIVMSG:10,NOTICE:10,ACCEPT:,MONITOR:","are supported by this server"]},{"cmd":251,"args":["There are 5551 users and 10260 invisible on 22 servers"]},{"cmd":252,"args":[112,"IRC Operators online"]},{"cmd":254,"args":[8898,"channels formed"]},{"cmd":255,"args":["I have 861 clients and 1 servers"]},{"cmd":265,"args":[861,1981,"Current local users 861, max 1981"]},{"cmd":266,"args":[15811,19586,"Current global users 15811, max 19586"]},{"cmd":250,"args":["Highest connection count: 1982 (1981 clients) (521309 connections received)"]},{"cmd":375,"args":["- irc.efnet.nl Message of the Day -"]},{"cmd":372,"args":["- <Removed for example>"]},{"cmd":376,"args":["End of /MOTD command."]}]
 ```
 
 #### Expanded JSON-IRC for readability
@@ -56,25 +142,25 @@ A simple example showing the difference between the IRC protocols and the JSON-I
 [
   {
     "cmd": 1,
-    "prm": [
+    "args": [
       "Welcome to the EFNet Internet Relay Chat Network JD"
     ]
   },
   {
     "cmd": 2,
-    "prm": [
+    "args": [
       "Your host is irc.efnet.nl[185.100.59.59/6667], running version ircd-ratbox-3.0.10"
     ]
   },
   {
     "cmd": 3,
-    "prm": [
+    "args": [
       "This server was created Sun Oct 2 2016 at 04:55:27 CEST"
     ]
   },
   {
     "cmd": 4,
-    "prm": [
+    "args": [
       "irc.efnet.nl",
       "ircd-ratbox-3.0.10",
       "oiwszcrkfydnxbauglZCD",
@@ -84,7 +170,7 @@ A simple example showing the difference between the IRC protocols and the JSON-I
   },
   {
     "cmd": 5,
-    "prm": [
+    "args": [
       "CHANTYPES=&#",
       "EXCEPTS",
       "INVEX",
@@ -101,7 +187,7 @@ A simple example showing the difference between the IRC protocols and the JSON-I
   },
   {
     "cmd": 5,
-    "prm": [
+    "args": [
       "SAFELIST",
       "ELIST=U",
       "CASEMAPPING=rfc1459",
@@ -119,7 +205,7 @@ A simple example showing the difference between the IRC protocols and the JSON-I
   },
   {
     "cmd": 5,
-    "prm": [
+    "args": [
       "FNC",
       "ACCEPT=20",
       "MAP",
@@ -129,33 +215,33 @@ A simple example showing the difference between the IRC protocols and the JSON-I
   },
   {
     "cmd": 251,
-    "prm": [
+    "args": [
       "There are 5551 users and 10260 invisible on 22 servers"
     ]
   },
   {
     "cmd": 252,
-    "prm": [
+    "args": [
       112,
       "IRC Operators online"
     ]
   },
   {
     "cmd": 254,
-    "prm": [
+    "args": [
       8898,
       "channels formed"
     ]
   },
   {
     "cmd": 255,
-    "prm": [
+    "args": [
       "I have 861 clients and 1 servers"
     ]
   },
   {
     "cmd": 265,
-    "prm": [
+    "args": [
       861,
       1981,
       "Current local users 861, max 1981"
@@ -163,7 +249,7 @@ A simple example showing the difference between the IRC protocols and the JSON-I
   },
   {
     "cmd": 266,
-    "prm": [
+    "args": [
       15811,
       19586,
       "Current global users 15811, max 19586"
@@ -171,25 +257,25 @@ A simple example showing the difference between the IRC protocols and the JSON-I
   },
   {
     "cmd": 250,
-    "prm": [
+    "args": [
       "Highest connection count: 1982 (1981 clients) (521309 connections received)"
     ]
   },
   {
     "cmd": 375,
-    "prm": [
+    "args": [
       "- irc.efnet.nl Message of the Day -"
     ]
   },
   {
     "cmd": 372,
-    "prm": [
+    "args": [
       "- <Removed for example>"
     ]
   },
   {
     "cmd": 376,
-    "prm": [
+    "args": [
       "End of /MOTD command."
     ]
   }

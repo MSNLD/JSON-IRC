@@ -104,7 +104,7 @@ A channel name such as `#Lobby` would stay as `#Lobby` (IRC Compatible)
 A channel name with a space such as `#The Lobby` would become `%#The\bLobby` (IRCX Compatible)
 
 ```javascript
-TODO: Consideration needs to be given to where binary messages need to not be modified from LATIN1 due to JSON's UTF-8 encoding. 
+// TODO: Consideration needs to be given to where binary messages need to not be modified from LATIN1 due to JSON's UTF-8 encoding. 
 ```
 
 ### Issues

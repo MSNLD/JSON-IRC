@@ -1,5 +1,5 @@
 # JSON-IRC
-JSON-IRC describes how the IRC(X/3/4/5/6/7/8/v3) protocols can be delivered over JSON.
+JSON-IRC describes how the IRC(2/X/3/4/5/6/7/8/v3) protocols can be delivered over JSON.
 
 This work is a draft, and SHOULD NOT be used on any production issues.
 
